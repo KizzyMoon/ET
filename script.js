@@ -274,7 +274,8 @@ function renderTable() {
   const config = views[activeView];
   document.getElementById("tableTitle").textContent = config.title;
   document.getElementById("tableHint").textContent = config.hint;
-  document.getElementById("tableHead").innerHTML = `<tr>${config.columns.map((column) => `<th>${column}</th>`).join("")}</tr>`;
+  document.getElementById("tableHead").innerHTML =
+    activeView === "summary" ? "" : `<tr>${config.columns.map((column) => `<th>${column}</th>`).join("")}</tr>`;
 
   const rows = getRows().filter((row) => JSON.stringify(row).toLowerCase().includes(searchTerm));
   const body = document.getElementById("tableBody");
@@ -290,6 +291,11 @@ function renderTable() {
 
   if (activeView === "attendance") {
     body.innerHTML = renderGroupedAttendanceRows(rows);
+    return;
+  }
+
+  if (activeView === "summary") {
+    body.innerHTML = `<tr><td class="summary-card-cell" colspan="6">${renderSummaryCards(rows)}</td></tr>`;
     return;
   }
 
@@ -553,6 +559,26 @@ function getAttendanceSummary() {
       return { ...person, rate, flag };
     })
     .sort((a, b) => b.noShow - a.noShow || a.name.localeCompare(b.name));
+}
+
+function renderSummaryCards(rows) {
+  return `<div class="summary-card-grid">${rows.map(renderSummaryCard).join("")}</div>`;
+}
+
+function renderSummaryCard(person) {
+  return `<article class="summary-card">
+    <div class="summary-card-header">
+      <h3>${escapeHtml(person.name)}</h3>
+      <span class="badge ${statusClass(person.flag)}">${escapeHtml(person.flag)}</span>
+    </div>
+    <div class="summary-rate">${person.rate}%</div>
+    <p>Attendance Rate</p>
+    <dl>
+      <div><dt>In Attendance</dt><dd>${person.inAttendance}</dd></div>
+      <div><dt>Unable</dt><dd>${person.unable}</dd></div>
+      <div><dt>Didn't Show Up</dt><dd>${person.noShow}</dd></div>
+    </dl>
+  </article>`;
 }
 
 function buildTeamFromAttendance(attendance = []) {
