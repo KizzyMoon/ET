@@ -310,7 +310,7 @@ function renderRow(row) {
   if (activeView === "meetings") {
     return `<tr>
       <td>${formatDate(row.date)}</td>
-      <td>${escapeHtml(row.time)}</td>
+      <td>${formatTime(row.time)}</td>
       <td><strong>${escapeHtml(row.title)}</strong></td>
       <td>${escapeHtml(row.agenda)}</td>
       <td>${deleteButton("meetings", row.id)}</td>
@@ -324,7 +324,7 @@ function renderRow(row) {
       <td>${escapeHtml(meeting?.title || "Deleted meeting")}</td>
       <td><strong>${escapeHtml(person?.name || row.name)}</strong></td>
       <td><span class="badge ${statusClass(row.status)}">${escapeHtml(row.status)}</span></td>
-      <td>${escapeHtml(row.arrival)}</td>
+      <td>${formatTime(row.arrival)}</td>
       <td>${escapeHtml(row.notes)}</td>
       <td>${deleteButton("attendance", row.id)}</td>
     </tr>`;
@@ -484,6 +484,16 @@ function formatDate(value) {
   if (!value) return "";
   const [year, month, day] = value.split("-");
   return `${day}/${month}/${year}`;
+}
+
+function formatTime(value) {
+  if (!value) return "";
+  const [hourText, minuteText = "00"] = value.split(":");
+  const hour = Number(hourText);
+  if (Number.isNaN(hour)) return escapeHtml(value);
+  const period = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${minuteText.padStart(2, "0")} ${period}`;
 }
 
 function escapeHtml(value = "") {
