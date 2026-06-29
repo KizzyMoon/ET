@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Event Team Hub</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Event Team</p>
+        <h1>Meeting Hub</h1>
+      </div>
+      <div class="topbar-actions">
+        <button class="icon-button" id="exportData" title="Download backup" aria-label="Download backup">
+          <span aria-hidden="true">DL</span>
+        </button>
+        <label class="icon-button file-button" title="Import backup" aria-label="Import backup">
+          <span aria-hidden="true">UP</span>
+          <input id="importData" type="file" accept="application/json" />
+        </label>
+      </div>
+    </header>
+
+    <main>
+      <section class="dashboard" aria-label="Dashboard summary">
+        <div class="metric">
+          <span>Upcoming</span>
+          <strong id="upcomingCount">0</strong>
+        </div>
+        <div class="metric">
+          <span>Attendance Records</span>
+          <strong id="attendanceCount">0</strong>
+        </div>
+        <div class="metric">
+          <span>Open Actions</span>
+          <strong id="openActionCount">0</strong>
+        </div>
+        <div class="metric">
+          <span>Attendance Rate</span>
+          <strong id="presentRate">0%</strong>
+        </div>
+        <div class="metric">
+          <span>Team Members</span>
+          <strong id="teamCount">0</strong>
+        </div>
+      </section>
+
+      <nav class="tabs" aria-label="Sections">
+        <button class="tab active" data-view="meetings">Meetings</button>
+        <button class="tab" data-view="team">Team</button>
+        <button class="tab" data-view="attendance">Attendance</button>
+        <button class="tab" data-view="notes">Notes</button>
+      </nav>
+
+      <section class="workspace">
+        <aside class="panel form-panel">
+          <form id="meetingForm" class="entry-form" data-form="meetings">
+            <h2>Create Meeting</h2>
+            <label>
+              Title
+              <input name="title" required placeholder="July planning meeting" />
+            </label>
+            <div class="field-row">
+              <label>
+                Date
+                <input name="date" type="date" required />
+              </label>
+              <label>
+                Time
+                <input name="time" type="time" required />
+              </label>
+            </div>
+            <label>
+              Location or Link
+              <input name="location" placeholder="Main Hall or Teams link" />
+            </label>
+            <label>
+              Agenda
+              <textarea name="agenda" rows="4" placeholder="What needs to be covered?"></textarea>
+            </label>
+            <button type="submit">Add Meeting</button>
+          </form>
+
+          <form id="attendanceForm" class="entry-form hidden" data-form="attendance">
+            <h2>Take Attendance</h2>
+            <label>
+              Meeting
+              <select name="meetingId" required></select>
+            </label>
+            <label>
+              Name
+              <select name="personId" required></select>
+            </label>
+            <div class="field-row">
+              <label>
+                Status
+                <select name="status">
+                  <option>In Attendance</option>
+                  <option>Unable to Make It</option>
+                  <option>Didn't Show Up</option>
+                </select>
+              </label>
+              <label>
+                Arrival
+                <input name="arrival" type="time" />
+              </label>
+            </div>
+            <label>
+              Notes
+              <textarea name="notes" rows="4" placeholder="Anything to follow up?"></textarea>
+            </label>
+            <button type="submit">Save Attendance</button>
+          </form>
+
+          <form id="teamForm" class="entry-form hidden" data-form="team">
+            <h2>Add Team Member</h2>
+            <input name="id" type="hidden" />
+            <label>
+              Name
+              <input name="name" required placeholder="Team member name" />
+            </label>
+            <label>
+              Role
+              <input name="role" placeholder="Volunteer, lead, coordinator" />
+            </label>
+            <label>
+              Contact
+              <input name="contact" placeholder="Email or phone" />
+            </label>
+            <label>
+              Notes
+              <textarea name="notes" rows="4" placeholder="Availability, skills, or reminders"></textarea>
+            </label>
+            <div class="button-row">
+              <button type="submit" id="teamSubmit">Add Person</button>
+              <button type="button" class="secondary-button hidden" id="cancelTeamEdit">Cancel</button>
+            </div>
+          </form>
+
+          <form id="noteForm" class="entry-form hidden" data-form="notes">
+            <h2>Meeting Notes</h2>
+            <label>
+              Meeting
+              <select name="meetingId" required></select>
+            </label>
+            <label>
+              Note or Decision
+              <textarea name="note" rows="4" required placeholder="What was discussed or decided?"></textarea>
+            </label>
+            <label>
+              Action Item
+              <input name="action" placeholder="Who needs to do what?" />
+            </label>
+            <div class="field-row">
+              <label>
+                Owner
+                <input name="owner" placeholder="Owner" />
+              </label>
+              <label>
+                Due Date
+                <input name="dueDate" type="date" />
+              </label>
+            </div>
+            <button type="submit">Save Note</button>
+          </form>
+        </aside>
+
+        <section class="panel table-panel">
+          <div class="table-toolbar">
+            <div>
+              <h2 id="tableTitle">Meetings</h2>
+              <p id="tableHint">Create and manage meeting dates, times, agendas, and locations.</p>
+            </div>
+            <input id="searchInput" type="search" placeholder="Search" />
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead id="tableHead"></thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <template id="emptyState">
+      <tr>
+        <td class="empty" colspan="8">No records yet.</td>
+      </tr>
+    </template>
+
+    <script src="script.js"></script>
+  </body>
+</html>
