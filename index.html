@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Event Team Hub</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=dark-purple-2" />
   </head>
   <body>
     <header class="topbar">
@@ -51,6 +51,7 @@
         <button class="tab active" data-view="meetings">Meetings</button>
         <button class="tab" data-view="team">Team</button>
         <button class="tab" data-view="attendance">Attendance</button>
+        <button class="tab" data-view="summary">Summary</button>
         <button class="tab" data-view="notes">Notes</button>
       </nav>
 
@@ -153,6 +154,11 @@
             </div>
             <button type="submit">Save Note</button>
           </form>
+
+          <div class="entry-form hidden summary-note" data-form="summary">
+            <h2>Attendance Summary</h2>
+            <p>Review each person’s overall attendance and spot repeated no-shows.</p>
+          </div>
         </aside>
 
         <section class="panel table-panel">

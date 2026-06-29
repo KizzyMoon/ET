@@ -191,6 +191,12 @@ main {
   gap: 13px;
 }
 
+.summary-note p {
+  color: var(--muted);
+  line-height: 1.45;
+  margin-bottom: 0;
+}
+
 .hidden {
   display: none;
 }
@@ -336,6 +342,21 @@ td {
 .badge.open {
   background: #3b1b54;
   color: var(--amber);
+}
+
+.badge.good {
+  background: #143323;
+  color: var(--green);
+}
+
+.badge.watch {
+  background: #3b1b54;
+  color: var(--amber);
+}
+
+.badge.needs-follow-up {
+  background: #4c1020;
+  color: var(--rose);
 }
 
 .edit-row,

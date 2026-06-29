@@ -53,6 +53,11 @@ const views = {
     hint: "Track who attended each meeting and whether any follow-up is needed.",
     columns: ["Meeting", "Name", "Status", "Arrival", "Notes", ""],
   },
+  summary: {
+    title: "Attendance Summary",
+    hint: "See each person’s overall attendance record and repeated no-shows.",
+    columns: ["Name", "Records", "In Attendance", "Unable", "Didn't Show Up", "Attendance Rate", "Status"],
+  },
   notes: {
     title: "Notes",
     hint: "Keep meeting notes, decisions, action items, owners, and due dates together.",
@@ -278,6 +283,9 @@ function getRows() {
   if (activeView === "team") {
     return [...state.team].sort((a, b) => a.name.localeCompare(b.name));
   }
+  if (activeView === "summary") {
+    return getAttendanceSummary();
+  }
   return state[activeView];
 }
 
@@ -310,6 +318,18 @@ function renderRow(row) {
       <td><strong>${escapeHtml(row.name)}</strong></td>
       <td>${escapeHtml(row.notes)}</td>
       <td class="row-actions">${editButton(row.id)}${deleteButton("team", row.id)}</td>
+    </tr>`;
+  }
+
+  if (activeView === "summary") {
+    return `<tr>
+      <td><strong>${escapeHtml(row.name)}</strong></td>
+      <td>${row.total}</td>
+      <td>${row.inAttendance}</td>
+      <td>${row.unable}</td>
+      <td>${row.noShow}</td>
+      <td>${row.rate}%</td>
+      <td><span class="badge ${statusClass(row.flag)}">${escapeHtml(row.flag)}</span></td>
     </tr>`;
   }
 
@@ -362,6 +382,49 @@ function findMeeting(id) {
 
 function findPerson(id) {
   return state.team.find((person) => person.id === id);
+}
+
+function getAttendanceSummary() {
+  const summary = new Map();
+
+  state.team.forEach((person) => {
+    summary.set(person.id, {
+      name: person.name,
+      total: 0,
+      inAttendance: 0,
+      unable: 0,
+      noShow: 0,
+    });
+  });
+
+  state.attendance.forEach((row) => {
+    const key = row.personId || row.name;
+    if (!summary.has(key)) {
+      summary.set(key, {
+        name: row.name || "Unknown",
+        total: 0,
+        inAttendance: 0,
+        unable: 0,
+        noShow: 0,
+      });
+    }
+
+    const person = summary.get(key);
+    person.total += 1;
+    if (row.status === "In Attendance") person.inAttendance += 1;
+    if (row.status === "Unable to Make It") person.unable += 1;
+    if (row.status === "Didn't Show Up") person.noShow += 1;
+  });
+
+  return [...summary.values()]
+    .map((person) => {
+      const rate = person.total ? Math.round((person.inAttendance / person.total) * 100) : 0;
+      let flag = "Good";
+      if (person.noShow >= 2) flag = "Needs Follow-up";
+      else if (person.noShow === 1) flag = "Watch";
+      return { ...person, rate, flag };
+    })
+    .sort((a, b) => b.noShow - a.noShow || a.name.localeCompare(b.name));
 }
 
 function buildTeamFromAttendance(attendance = []) {
