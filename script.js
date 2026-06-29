@@ -57,8 +57,8 @@ const views = {
   },
   summary: {
     title: "Attendance Summary",
-    hint: "See each person’s overall attendance record and repeated no-shows.",
-    columns: ["Name", "Records", "In Attendance", "Unable", "Didn't Show Up", "Attendance Rate", "Status"],
+    hint: "See each person's overall attendance record and repeated no-shows.",
+    columns: ["Name", "In Attendance", "Unable", "Didn't Show Up", "Attendance Rate", "Status"],
   },
   notes: {
     title: "Notes",
@@ -354,7 +354,6 @@ function renderRow(row) {
   if (activeView === "summary") {
     return `<tr>
       <td><strong>${escapeHtml(row.name)}</strong></td>
-      <td>${row.total}</td>
       <td>${row.inAttendance}</td>
       <td>${row.unable}</td>
       <td>${row.noShow}</td>

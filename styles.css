@@ -203,12 +203,6 @@ main {
   gap: 13px;
 }
 
-.summary-note p {
-  color: var(--muted);
-  line-height: 1.45;
-  margin-bottom: 0;
-}
-
 .hidden {
   display: none;
 }
