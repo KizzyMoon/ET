@@ -5,11 +5,13 @@ const sampleData = {
     {
       id: crypto.randomUUID(),
       name: "Alex Morgan",
+      group: "Founders",
       notes: "Main event lead.",
     },
     {
       id: crypto.randomUUID(),
       name: "Jordan Lee",
+      group: "Builders",
       notes: "Venue and vendor follow-up.",
     },
   ],
@@ -45,8 +47,8 @@ const views = {
   },
   team: {
     title: "Event Team",
-    hint: "Add, edit, and remove people who can be selected for attendance.",
-    columns: ["Name", "Notes", ""],
+    hint: "Add, edit, remove, and group people who can be selected for attendance.",
+    columns: ["Name", "Group", "Notes", ""],
   },
   attendance: {
     title: "Attendance",
@@ -127,6 +129,7 @@ document.getElementById("teamForm").addEventListener("submit", (event) => {
   const person = {
     id: form.get("id") || crypto.randomUUID(),
     name: form.get("name").trim(),
+    group: form.get("group").trim(),
     notes: form.get("notes").trim(),
   };
   const existingIndex = state.team.findIndex((member) => member.id === person.id);
@@ -219,6 +222,7 @@ function render() {
   renderMetrics();
   renderMeetingOptions();
   renderPersonOptions();
+  renderGroupOptions();
   renderTable();
 }
 
@@ -260,6 +264,11 @@ function renderPersonOptions() {
   });
 }
 
+function renderGroupOptions() {
+  const groups = getGroups();
+  document.getElementById("groupOptions").innerHTML = groups.map((group) => `<option value="${escapeHtml(group)}"></option>`).join("");
+}
+
 function renderTable() {
   const config = views[activeView];
   document.getElementById("tableTitle").textContent = config.title;
@@ -273,6 +282,11 @@ function renderTable() {
     return;
   }
 
+  if (activeView === "team") {
+    body.innerHTML = renderGroupedTeamRows(rows);
+    return;
+  }
+
   body.innerHTML = rows.map((row) => renderRow(row)).join("");
 }
 
@@ -281,7 +295,10 @@ function getRows() {
     return [...state.meetings].sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`));
   }
   if (activeView === "team") {
-    return [...state.team].sort((a, b) => a.name.localeCompare(b.name));
+    return [...state.team].sort((a, b) => {
+      const groupCompare = getPersonGroup(a).localeCompare(getPersonGroup(b));
+      return groupCompare || a.name.localeCompare(b.name);
+    });
   }
   if (activeView === "summary") {
     return getAttendanceSummary();
@@ -316,6 +333,7 @@ function renderRow(row) {
   if (activeView === "team") {
     return `<tr>
       <td><strong>${escapeHtml(row.name)}</strong></td>
+      <td>${escapeHtml(getPersonGroup(row))}</td>
       <td>${escapeHtml(row.notes)}</td>
       <td class="row-actions">${editButton(row.id)}${deleteButton("team", row.id)}</td>
     </tr>`;
@@ -359,6 +377,7 @@ function editPerson(id) {
   const form = document.getElementById("teamForm");
   form.elements.id.value = person.id;
   form.elements.name.value = person.name;
+  form.elements.group.value = person.group || "";
   form.elements.notes.value = person.notes;
   document.getElementById("teamSubmit").textContent = "Save Changes";
   document.getElementById("cancelTeamEdit").classList.remove("hidden");
@@ -382,6 +401,29 @@ function findMeeting(id) {
 
 function findPerson(id) {
   return state.team.find((person) => person.id === id);
+}
+
+function renderGroupedTeamRows(rows) {
+  let currentGroup = "";
+  return rows
+    .map((row) => {
+      const group = getPersonGroup(row);
+      const header =
+        group !== currentGroup
+          ? `<tr class="group-row"><td colspan="4">${escapeHtml(group)}</td></tr>`
+          : "";
+      currentGroup = group;
+      return `${header}${renderRow(row)}`;
+    })
+    .join("");
+}
+
+function getPersonGroup(person) {
+  return person.group?.trim() || "Ungrouped";
+}
+
+function getGroups() {
+  return [...new Set(state.team.map(getPersonGroup).filter((group) => group !== "Ungrouped"))].sort((a, b) => a.localeCompare(b));
 }
 
 function getAttendanceSummary() {
@@ -433,6 +475,7 @@ function buildTeamFromAttendance(attendance = []) {
   return names.map((name) => ({
     id: crypto.randomUUID(),
     name,
+    group: "",
     notes: "",
   }));
 }
