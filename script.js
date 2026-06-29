@@ -129,7 +129,7 @@ document.getElementById("teamForm").addEventListener("submit", (event) => {
   const person = {
     id: form.get("id") || crypto.randomUUID(),
     name: form.get("name").trim(),
-    group: form.get("group").trim(),
+    group: formatGroupName(form.get("group")),
     notes: form.get("notes").trim(),
   };
   const existingIndex = state.team.findIndex((member) => member.id === person.id);
@@ -296,7 +296,7 @@ function getRows() {
   }
   if (activeView === "team") {
     return [...state.team].sort((a, b) => {
-      const groupCompare = getPersonGroup(a).localeCompare(getPersonGroup(b));
+      const groupCompare = getGroupKey(a).localeCompare(getGroupKey(b));
       return groupCompare || a.name.localeCompare(b.name);
     });
   }
@@ -404,26 +404,44 @@ function findPerson(id) {
 }
 
 function renderGroupedTeamRows(rows) {
-  let currentGroup = "";
+  let currentGroupKey = "";
+  const counts = rows.reduce((totals, row) => {
+    const group = getPersonGroup(row);
+    totals[group] = (totals[group] || 0) + 1;
+    return totals;
+  }, {});
+
   return rows
     .map((row) => {
       const group = getPersonGroup(row);
+      const groupKey = getGroupKey(row);
       const header =
-        group !== currentGroup
-          ? `<tr class="group-row"><td colspan="4">${escapeHtml(group)}</td></tr>`
+        groupKey !== currentGroupKey
+          ? `<tr class="group-row"><td colspan="4">${escapeHtml(group)} <span>${counts[group]}</span></td></tr>`
           : "";
-      currentGroup = group;
+      currentGroupKey = groupKey;
       return `${header}${renderRow(row)}`;
     })
     .join("");
 }
 
 function getPersonGroup(person) {
-  return person.group?.trim() || "Ungrouped";
+  return formatGroupName(person.group) || "Ungrouped";
+}
+
+function getGroupKey(person) {
+  return getPersonGroup(person).toLowerCase();
 }
 
 function getGroups() {
   return [...new Set(state.team.map(getPersonGroup).filter((group) => group !== "Ungrouped"))].sort((a, b) => a.localeCompare(b));
+}
+
+function formatGroupName(value = "") {
+  return String(value)
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function getAttendanceSummary() {

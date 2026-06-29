@@ -319,6 +319,12 @@ th {
   font-size: 0.78rem;
 }
 
+.group-row span {
+  margin-left: 8px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
 td {
   color: #e9e3ff;
   line-height: 1.35;
