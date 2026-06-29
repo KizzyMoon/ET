@@ -176,6 +176,18 @@ main {
   align-items: start;
 }
 
+.summary-mode .workspace {
+  grid-template-columns: 1fr;
+}
+
+.summary-mode .form-panel {
+  order: 1;
+}
+
+.summary-mode .table-panel {
+  order: 2;
+}
+
 .panel {
   border-radius: 8px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow);

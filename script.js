@@ -211,6 +211,7 @@ function saveAndRender() {
 
 function setView(view) {
   activeView = view;
+  document.body.classList.toggle("summary-mode", view === "summary");
   document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === view));
   document.querySelectorAll(".entry-form").forEach((form) => form.classList.toggle("hidden", form.dataset.form !== view));
   document.getElementById("searchInput").value = "";
