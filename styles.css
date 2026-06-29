@@ -325,6 +325,28 @@ th {
   font-weight: 700;
 }
 
+.meeting-row td {
+  background: linear-gradient(135deg, rgba(192, 132, 252, 0.28), rgba(147, 51, 234, 0.14));
+  border-top: 2px solid var(--brand);
+}
+
+.meeting-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+
+.meeting-summary strong {
+  color: #f5f3ff;
+  font-size: 1rem;
+}
+
+.meeting-summary span {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
 td {
   color: #e9e3ff;
   line-height: 1.35;

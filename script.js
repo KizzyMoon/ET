@@ -52,8 +52,8 @@ const views = {
   },
   attendance: {
     title: "Attendance",
-    hint: "Track who attended each meeting and whether any follow-up is needed.",
-    columns: ["Meeting", "Name", "Status", "Arrival", "Notes", ""],
+    hint: "View attendance grouped by meeting, with each meeting's attendees together.",
+    columns: ["Name", "Status", "Arrival", "Notes", ""],
   },
   summary: {
     title: "Attendance Summary",
@@ -287,6 +287,11 @@ function renderTable() {
     return;
   }
 
+  if (activeView === "attendance") {
+    body.innerHTML = renderGroupedAttendanceRows(rows);
+    return;
+  }
+
   body.innerHTML = rows.map((row) => renderRow(row)).join("");
 }
 
@@ -303,6 +308,14 @@ function getRows() {
   if (activeView === "summary") {
     return getAttendanceSummary();
   }
+  if (activeView === "attendance") {
+    return [...state.attendance].sort((a, b) => {
+      const meetingCompare = getMeetingSortValue(a.meetingId).localeCompare(getMeetingSortValue(b.meetingId));
+      const aName = findPerson(a.personId)?.name || a.name;
+      const bName = findPerson(b.personId)?.name || b.name;
+      return meetingCompare || aName.localeCompare(bName);
+    });
+  }
   return state[activeView];
 }
 
@@ -318,10 +331,8 @@ function renderRow(row) {
   }
 
   if (activeView === "attendance") {
-    const meeting = findMeeting(row.meetingId);
     const person = findPerson(row.personId);
     return `<tr>
-      <td>${escapeHtml(meeting?.title || "Deleted meeting")}</td>
       <td><strong>${escapeHtml(person?.name || row.name)}</strong></td>
       <td><span class="badge ${statusClass(row.status)}">${escapeHtml(row.status)}</span></td>
       <td>${formatTime(row.arrival)}</td>
@@ -399,8 +410,65 @@ function findMeeting(id) {
   return state.meetings.find((meeting) => meeting.id === id);
 }
 
+function getMeetingSortValue(meetingId) {
+  const meeting = findMeeting(meetingId);
+  return `${meeting?.date || "9999-99-99"}${meeting?.time || "99:99"}${meeting?.title || ""}`;
+}
+
 function findPerson(id) {
   return state.team.find((person) => person.id === id);
+}
+
+function renderGroupedAttendanceRows(rows) {
+  let currentMeetingId = "";
+  const summaries = getMeetingAttendanceSummaries(rows);
+
+  return rows
+    .map((row) => {
+      const meetingId = row.meetingId || "deleted";
+      const header =
+        meetingId !== currentMeetingId
+          ? `<tr class="meeting-row"><td colspan="5">${renderMeetingSummary(summaries[meetingId])}</td></tr>`
+          : "";
+      currentMeetingId = meetingId;
+      return `${header}${renderRow(row)}`;
+    })
+    .join("");
+}
+
+function getMeetingAttendanceSummaries(rows) {
+  return rows.reduce((summaries, row) => {
+    const meetingId = row.meetingId || "deleted";
+    const meeting = findMeeting(row.meetingId);
+    const summary = summaries[meetingId] || {
+      title: meeting?.title || "Deleted meeting",
+      date: meeting?.date || "",
+      time: meeting?.time || "",
+      total: 0,
+      inAttendance: 0,
+      unable: 0,
+      noShow: 0,
+    };
+
+    summary.total += 1;
+    if (row.status === "In Attendance") summary.inAttendance += 1;
+    if (row.status === "Unable to Make It") summary.unable += 1;
+    if (row.status === "Didn't Show Up") summary.noShow += 1;
+    summaries[meetingId] = summary;
+    return summaries;
+  }, {});
+}
+
+function renderMeetingSummary(summary) {
+  const rate = summary.total ? Math.round((summary.inAttendance / summary.total) * 100) : 0;
+  const when = [formatDate(summary.date), formatTime(summary.time)].filter(Boolean).join(" ");
+  return `<div class="meeting-summary">
+    <strong>${escapeHtml(summary.title)}</strong>
+    <span>${escapeHtml(when)}</span>
+    <span>${summary.total} recorded</span>
+    <span>${rate}% attended</span>
+    <span>${summary.noShow} no-show</span>
+  </div>`;
 }
 
 function renderGroupedTeamRows(rows) {
