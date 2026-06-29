@@ -5,15 +5,11 @@ const sampleData = {
     {
       id: crypto.randomUUID(),
       name: "Alex Morgan",
-      role: "Lead",
-      contact: "",
-      notes: "Main event contact.",
+      notes: "Main event lead.",
     },
     {
       id: crypto.randomUUID(),
       name: "Jordan Lee",
-      role: "Coordinator",
-      contact: "",
       notes: "Venue and vendor follow-up.",
     },
   ],
@@ -23,7 +19,6 @@ const sampleData = {
       title: "July event planning",
       date: "2026-07-02",
       time: "18:00",
-      location: "Community Room",
       agenda: "Confirm event timeline, supplies, and team assignments.",
     },
     {
@@ -31,7 +26,6 @@ const sampleData = {
       title: "Vendor check-in",
       date: "2026-07-09",
       time: "18:00",
-      location: "Teams link",
       agenda: "Review vendor confirmations and outstanding questions.",
     },
   ],
@@ -46,13 +40,13 @@ let searchTerm = "";
 const views = {
   meetings: {
     title: "Meetings",
-    hint: "Create and manage meeting dates, times, agendas, and locations.",
-    columns: ["Date", "Time", "Title", "Location", "Agenda", ""],
+    hint: "Create and manage meeting dates, times, and agendas.",
+    columns: ["Date", "Time", "Title", "Agenda", ""],
   },
   team: {
     title: "Event Team",
     hint: "Add, edit, and remove people who can be selected for attendance.",
-    columns: ["Name", "Role", "Contact", "Notes", ""],
+    columns: ["Name", "Notes", ""],
   },
   attendance: {
     title: "Attendance",
@@ -83,7 +77,6 @@ document.getElementById("meetingForm").addEventListener("submit", (event) => {
     title: form.get("title").trim(),
     date: form.get("date"),
     time: form.get("time"),
-    location: form.get("location").trim(),
     agenda: form.get("agenda").trim(),
   });
   event.currentTarget.reset();
@@ -129,8 +122,6 @@ document.getElementById("teamForm").addEventListener("submit", (event) => {
   const person = {
     id: form.get("id") || crypto.randomUUID(),
     name: form.get("name").trim(),
-    role: form.get("role").trim(),
-    contact: form.get("contact").trim(),
     notes: form.get("notes").trim(),
   };
   const existingIndex = state.team.findIndex((member) => member.id === person.id);
@@ -296,7 +287,6 @@ function renderRow(row) {
       <td>${formatDate(row.date)}</td>
       <td>${escapeHtml(row.time)}</td>
       <td><strong>${escapeHtml(row.title)}</strong></td>
-      <td>${escapeHtml(row.location)}</td>
       <td>${escapeHtml(row.agenda)}</td>
       <td>${deleteButton("meetings", row.id)}</td>
     </tr>`;
@@ -318,8 +308,6 @@ function renderRow(row) {
   if (activeView === "team") {
     return `<tr>
       <td><strong>${escapeHtml(row.name)}</strong></td>
-      <td>${escapeHtml(row.role)}</td>
-      <td>${escapeHtml(row.contact)}</td>
       <td>${escapeHtml(row.notes)}</td>
       <td class="row-actions">${editButton(row.id)}${deleteButton("team", row.id)}</td>
     </tr>`;
@@ -351,8 +339,6 @@ function editPerson(id) {
   const form = document.getElementById("teamForm");
   form.elements.id.value = person.id;
   form.elements.name.value = person.name;
-  form.elements.role.value = person.role;
-  form.elements.contact.value = person.contact;
   form.elements.notes.value = person.notes;
   document.getElementById("teamSubmit").textContent = "Save Changes";
   document.getElementById("cancelTeamEdit").classList.remove("hidden");
@@ -384,8 +370,6 @@ function buildTeamFromAttendance(attendance = []) {
   return names.map((name) => ({
     id: crypto.randomUUID(),
     name,
-    role: "",
-    contact: "",
     notes: "",
   }));
 }
