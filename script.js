@@ -645,7 +645,7 @@ function getAttendanceSummary() {
       else if (person.noShow === 1) flag = "Watch";
       return { ...person, rate, flag };
     })
-    .sort((a, b) => b.noShow - a.noShow || a.name.localeCompare(b.name));
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function renderSummaryCards(rows) {
