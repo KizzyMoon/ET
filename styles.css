@@ -370,6 +370,89 @@ th {
   border-bottom: 0;
 }
 
+.attendance-card-cell {
+  padding: 0;
+  border-bottom: 0;
+}
+
+.attendance-meeting-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+  padding: 14px;
+}
+
+.attendance-meeting-card {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #171620;
+  overflow: hidden;
+}
+
+.attendance-meeting-card header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px;
+  background: linear-gradient(135deg, rgba(182, 109, 255, 0.2), rgba(143, 61, 242, 0.1));
+  border-bottom: 1px solid var(--line);
+}
+
+.attendance-meeting-card h3,
+.attendance-meeting-card p {
+  margin-bottom: 0;
+}
+
+.attendance-meeting-card header p,
+.attendance-person-row small,
+.attendance-person-row p {
+  color: var(--muted);
+}
+
+.attendance-meeting-card header > strong {
+  color: #e9d5ff;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.attendance-card-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.attendance-card-stats span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: #d8c8ff;
+  font-size: 0.78rem;
+}
+
+.attendance-card-list {
+  display: grid;
+}
+
+.attendance-person-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) max-content max-content max-content;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 14px;
+  border-top: 1px solid var(--line);
+}
+
+.attendance-person-row:first-child {
+  border-top: 0;
+}
+
+.attendance-person-row p {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+
 .meeting-browser {
   display: grid;
   gap: 16px;
@@ -629,5 +712,14 @@ td {
 
   .meeting-detail-stats {
     justify-content: flex-start;
+  }
+
+  .attendance-meeting-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .attendance-person-row {
+    grid-template-columns: 1fr;
+    align-items: start;
   }
 }

@@ -283,7 +283,9 @@ function renderTable() {
   document.getElementById("tableTitle").textContent = config.title;
   document.getElementById("tableHint").textContent = config.hint;
   document.getElementById("tableHead").innerHTML =
-    activeView === "summary" || activeView === "meetings" ? "" : `<tr>${config.columns.map((column) => `<th>${column}</th>`).join("")}</tr>`;
+    activeView === "summary" || activeView === "meetings" || activeView === "attendance"
+      ? ""
+      : `<tr>${config.columns.map((column) => `<th>${column}</th>`).join("")}</tr>`;
 
   const rows = getRows().filter((row) => JSON.stringify(row).toLowerCase().includes(searchTerm));
   const body = document.getElementById("tableBody");
@@ -306,7 +308,7 @@ function renderTable() {
   }
 
   if (activeView === "attendance") {
-    body.innerHTML = renderGroupedAttendanceRows(rows);
+    body.innerHTML = `<tr><td class="attendance-card-cell" colspan="5">${renderAttendanceMeetingCards(rows)}</td></tr>`;
     return;
   }
 
@@ -529,6 +531,46 @@ function renderGroupedAttendanceRows(rows) {
     .join("");
 }
 
+function renderAttendanceMeetingCards(rows) {
+  const summaries = getMeetingAttendanceSummaries(rows);
+  return `<div class="attendance-meeting-grid">${Object.entries(summaries).map(([meetingId, summary]) => renderAttendanceMeetingCard(meetingId, summary, rows)).join("")}</div>`;
+}
+
+function renderAttendanceMeetingCard(meetingId, summary, rows) {
+  const rate = summary.total ? Math.round((summary.inAttendance / summary.total) * 100) : 0;
+  const when = [formatDate(summary.date), formatTime(summary.time)].filter(Boolean).join(" ");
+  const meetingRows = rows.filter((row) => (row.meetingId || "deleted") === meetingId);
+  return `<article class="attendance-meeting-card">
+    <header>
+      <div>
+        <h3>${escapeHtml(summary.title)}</h3>
+        <p>${escapeHtml(when)}</p>
+      </div>
+      <strong>${rate}%</strong>
+    </header>
+    <div class="attendance-card-stats">
+      <span>${summary.total} recorded</span>
+      <span>${summary.inAttendance} attended</span>
+      <span>${summary.unable} unable</span>
+      <span>${summary.noShow} no-show</span>
+    </div>
+    <div class="attendance-card-list">
+      ${meetingRows.map(renderAttendanceCardPerson).join("")}
+    </div>
+  </article>`;
+}
+
+function renderAttendanceCardPerson(row) {
+  const person = findPerson(row.personId);
+  return `<div class="attendance-person-row">
+    <strong>${escapeHtml(person?.name || row.name)}</strong>
+    <span class="badge ${statusClass(row.status)}">${escapeHtml(row.status)}</span>
+    ${row.arrival ? `<small>${formatTime(row.arrival)}</small>` : ""}
+    ${deleteButton("attendance", row.id)}
+    ${row.notes ? `<p>${escapeHtml(row.notes)}</p>` : ""}
+  </div>`;
+}
+
 function getMeetingAttendanceSummaries(rows) {
   return rows.reduce((summaries, row) => {
     const meetingId = row.meetingId || "deleted";
@@ -645,11 +687,15 @@ function getAttendanceSummary() {
       else if (person.noShow === 1) flag = "Watch";
       return { ...person, rate, flag };
     })
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort(sortByName);
 }
 
 function renderSummaryCards(rows) {
-  return `<div class="summary-card-grid">${rows.map(renderSummaryCard).join("")}</div>`;
+  return `<div class="summary-card-grid">${[...rows].sort(sortByName).map(renderSummaryCard).join("")}</div>`;
+}
+
+function sortByName(a, b) {
+  return String(a.name || "").localeCompare(String(b.name || ""), undefined, { sensitivity: "base" });
 }
 
 function renderSummaryCard(person) {
