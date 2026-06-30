@@ -39,6 +39,7 @@ let state = loadState();
 let activeView = "meetings";
 let searchTerm = "";
 let selectedMeetingId = "";
+let selectedAttendanceMeetingId = "";
 
 const views = {
   meetings: {
@@ -179,6 +180,13 @@ document.getElementById("tableBody").addEventListener("click", (event) => {
     return;
   }
 
+  const attendanceMeetingCard = event.target.closest("[data-open-attendance-meeting]");
+  if (attendanceMeetingCard) {
+    selectedAttendanceMeetingId = attendanceMeetingCard.dataset.openAttendanceMeeting;
+    renderTable();
+    return;
+  }
+
   const editButton = event.target.closest("[data-edit]");
   if (editButton) {
     editPerson(editButton.dataset.id);
@@ -289,6 +297,26 @@ function renderTable() {
 
   const rows = getRows().filter((row) => JSON.stringify(row).toLowerCase().includes(searchTerm));
   const body = document.getElementById("tableBody");
+  if (activeView === "attendance") {
+    const meetings = getAttendanceMeetings().filter((meeting) => {
+      const meetingAttendance = state.attendance.filter((row) => row.meetingId === meeting.id);
+      const meetingNotes = state.notes.filter((note) => note.meetingId === meeting.id);
+      return JSON.stringify({ ...meeting, attendance: meetingAttendance, notes: meetingNotes }).toLowerCase().includes(searchTerm);
+    });
+
+    if (!meetings.length) {
+      body.innerHTML = document.getElementById("emptyState").innerHTML;
+      return;
+    }
+
+    if (!selectedAttendanceMeetingId || !meetings.some((meeting) => meeting.id === selectedAttendanceMeetingId)) {
+      selectedAttendanceMeetingId = meetings[0]?.id || "";
+    }
+
+    body.innerHTML = `<tr><td class="attendance-card-cell" colspan="5">${renderAttendanceMeetingCards(meetings)}</td></tr>`;
+    return;
+  }
+
   if (!rows.length) {
     body.innerHTML = document.getElementById("emptyState").innerHTML;
     return;
@@ -304,11 +332,6 @@ function renderTable() {
 
   if (activeView === "team") {
     body.innerHTML = renderGroupedTeamRows(rows);
-    return;
-  }
-
-  if (activeView === "attendance") {
-    body.innerHTML = `<tr><td class="attendance-card-cell" colspan="5">${renderAttendanceMeetingCards(rows)}</td></tr>`;
     return;
   }
 
@@ -531,43 +554,91 @@ function renderGroupedAttendanceRows(rows) {
     .join("");
 }
 
-function renderAttendanceMeetingCards(rows) {
-  const summaries = getMeetingAttendanceSummaries(rows);
-  return `<div class="attendance-meeting-grid">${Object.entries(summaries).map(([meetingId, summary]) => renderAttendanceMeetingCard(meetingId, summary, rows)).join("")}</div>`;
+function getAttendanceMeetings() {
+  return [...state.meetings].sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`));
 }
 
-function renderAttendanceMeetingCard(meetingId, summary, rows) {
-  const rate = summary.total ? Math.round((summary.inAttendance / summary.total) * 100) : 0;
-  const when = [formatDate(summary.date), formatTime(summary.time)].filter(Boolean).join(" ");
-  const meetingRows = rows.filter((row) => (row.meetingId || "deleted") === meetingId);
-  return `<article class="attendance-meeting-card">
+function renderAttendanceMeetingCards(meetings) {
+  const selectedMeeting = findMeeting(selectedAttendanceMeetingId) || meetings[0];
+  return `<div class="attendance-browser">
+    <div class="attendance-meeting-grid">${meetings.map(renderAttendanceMeetingCard).join("")}</div>
+    ${selectedMeeting ? renderAttendanceMeetingDetail(selectedMeeting) : ""}
+  </div>`;
+}
+
+function renderAttendanceMeetingCard(meeting) {
+  const attendance = state.attendance.filter((row) => row.meetingId === meeting.id);
+  const inAttendance = attendance.filter((row) => row.status === "In Attendance").length;
+  const unable = attendance.filter((row) => row.status === "Unable to Make It").length;
+  const noShow = attendance.filter((row) => row.status === "Didn't Show Up").length;
+  const rate = attendance.length ? Math.round((inAttendance / attendance.length) * 100) : 0;
+  const isSelected = meeting.id === selectedAttendanceMeetingId;
+  const when = [formatDate(meeting.date), formatTime(meeting.time)].filter(Boolean).join(" ");
+  return `<button class="attendance-meeting-card ${isSelected ? "selected" : ""}" data-open-attendance-meeting="${meeting.id}" type="button">
     <header>
       <div>
-        <h3>${escapeHtml(summary.title)}</h3>
+        <h3>${escapeHtml(meeting.title)}</h3>
         <p>${escapeHtml(when)}</p>
       </div>
       <strong>${rate}%</strong>
     </header>
     <div class="attendance-card-stats">
-      <span>${summary.total} recorded</span>
-      <span>${summary.inAttendance} attended</span>
-      <span>${summary.unable} unable</span>
-      <span>${summary.noShow} no-show</span>
+      <span>${attendance.length} recorded</span>
+      <span>${inAttendance} attended</span>
+      <span>${unable} unable</span>
+      <span>${noShow} no-show</span>
     </div>
-    <div class="attendance-card-list">
-      ${meetingRows.map(renderAttendanceCardPerson).join("")}
-    </div>
-  </article>`;
+  </button>`;
 }
 
-function renderAttendanceCardPerson(row) {
+function renderAttendanceMeetingDetail(meeting) {
+  const attendance = state.attendance
+    .filter((row) => row.meetingId === meeting.id)
+    .sort((a, b) => {
+      const aName = findPerson(a.personId)?.name || a.name;
+      const bName = findPerson(b.personId)?.name || b.name;
+      return aName.localeCompare(bName);
+    });
+  const notes = state.notes.filter((note) => note.meetingId === meeting.id);
+  const inAttendance = attendance.filter((row) => row.status === "In Attendance").length;
+  const unable = attendance.filter((row) => row.status === "Unable to Make It").length;
+  const noShow = attendance.filter((row) => row.status === "Didn't Show Up").length;
+  return `<section class="meeting-detail attendance-meeting-detail">
+    <div class="meeting-detail-header">
+      <div>
+        <h3>${escapeHtml(meeting.title)}</h3>
+        <p>${formatDate(meeting.date)} ${formatTime(meeting.time)}</p>
+      </div>
+      <div class="meeting-detail-stats">
+        <span>${attendance.length} recorded</span>
+        <span>${inAttendance} attended</span>
+        <span>${unable} unable</span>
+        <span>${noShow} no-show</span>
+      </div>
+    </div>
+    <div class="meeting-detail-grid">
+      <section>
+        <h4>People</h4>
+        ${attendance.length ? attendance.map(renderAttendanceDetailPerson).join("") : `<p class="muted">No attendance has been recorded for this meeting yet.</p>`}
+      </section>
+      <section>
+        <h4>Meeting Notes</h4>
+        ${notes.length ? notes.map(renderMeetingNoteItem).join("") : `<p class="muted">No notes have been saved for this meeting yet.</p>`}
+      </section>
+    </div>
+  </section>`;
+}
+
+function renderAttendanceDetailPerson(row) {
   const person = findPerson(row.personId);
-  return `<div class="attendance-person-row">
-    <strong>${escapeHtml(person?.name || row.name)}</strong>
-    <span class="badge ${statusClass(row.status)}">${escapeHtml(row.status)}</span>
-    ${row.arrival ? `<small>${formatTime(row.arrival)}</small>` : ""}
-    ${deleteButton("attendance", row.id)}
+  return `<div class="detail-item attendance-detail-person">
+    <div class="attendance-detail-person-header">
+      <strong>${escapeHtml(person?.name || row.name)}</strong>
+      <span class="badge ${statusClass(row.status)}">${escapeHtml(row.status)}</span>
+    </div>
+    ${row.arrival ? `<small>Arrival: ${formatTime(row.arrival)}</small>` : ""}
     ${row.notes ? `<p>${escapeHtml(row.notes)}</p>` : ""}
+    ${deleteButton("attendance", row.id)}
   </div>`;
 }
 
