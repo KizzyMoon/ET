@@ -38,6 +38,7 @@ const sampleData = {
 let state = loadState();
 let activeView = "meetings";
 let searchTerm = "";
+let selectedMeetingId = "";
 
 const views = {
   meetings: {
@@ -171,6 +172,13 @@ document.getElementById("importData").addEventListener("change", async (event) =
 });
 
 document.getElementById("tableBody").addEventListener("click", (event) => {
+  const meetingCard = event.target.closest("[data-open-meeting]");
+  if (meetingCard) {
+    selectedMeetingId = meetingCard.dataset.openMeeting;
+    renderTable();
+    return;
+  }
+
   const editButton = event.target.closest("[data-edit]");
   if (editButton) {
     editPerson(editButton.dataset.id);
@@ -275,12 +283,20 @@ function renderTable() {
   document.getElementById("tableTitle").textContent = config.title;
   document.getElementById("tableHint").textContent = config.hint;
   document.getElementById("tableHead").innerHTML =
-    activeView === "summary" ? "" : `<tr>${config.columns.map((column) => `<th>${column}</th>`).join("")}</tr>`;
+    activeView === "summary" || activeView === "meetings" ? "" : `<tr>${config.columns.map((column) => `<th>${column}</th>`).join("")}</tr>`;
 
   const rows = getRows().filter((row) => JSON.stringify(row).toLowerCase().includes(searchTerm));
   const body = document.getElementById("tableBody");
   if (!rows.length) {
     body.innerHTML = document.getElementById("emptyState").innerHTML;
+    return;
+  }
+
+  if (activeView === "meetings") {
+    if (!selectedMeetingId || !state.meetings.some((meeting) => meeting.id === selectedMeetingId)) {
+      selectedMeetingId = rows[0]?.id || "";
+    }
+    body.innerHTML = `<tr><td class="meeting-card-cell" colspan="5">${renderMeetingCards(rows)}</td></tr>`;
     return;
   }
 
@@ -377,6 +393,77 @@ function renderRow(row) {
     <td>${formatDate(row.dueDate)}</td>
     <td>${deleteButton("notes", row.id)}</td>
   </tr>`;
+}
+
+function renderMeetingCards(meetings) {
+  const selectedMeeting = findMeeting(selectedMeetingId) || meetings[0];
+  return `<div class="meeting-browser">
+    <div class="meeting-card-grid">${meetings.map(renderMeetingCard).join("")}</div>
+    ${selectedMeeting ? renderMeetingDetail(selectedMeeting) : ""}
+  </div>`;
+}
+
+function renderMeetingCard(meeting) {
+  const attendance = state.attendance.filter((row) => row.meetingId === meeting.id);
+  const notes = state.notes.filter((note) => note.meetingId === meeting.id);
+  const isSelected = meeting.id === selectedMeetingId;
+  const attended = attendance.filter((row) => row.status === "In Attendance").length;
+  const rate = attendance.length ? Math.round((attended / attendance.length) * 100) : 0;
+  return `<button class="meeting-card ${isSelected ? "selected" : ""}" data-open-meeting="${meeting.id}" type="button">
+    <span>${formatDate(meeting.date)} ${formatTime(meeting.time)}</span>
+    <strong>${escapeHtml(meeting.title)}</strong>
+    <small>${attendance.length} attendance records · ${notes.length} notes · ${rate}% attended</small>
+  </button>`;
+}
+
+function renderMeetingDetail(meeting) {
+  const attendance = state.attendance.filter((row) => row.meetingId === meeting.id);
+  const notes = state.notes.filter((note) => note.meetingId === meeting.id);
+  const attended = attendance.filter((row) => row.status === "In Attendance").length;
+  const unable = attendance.filter((row) => row.status === "Unable to Make It").length;
+  const noShow = attendance.filter((row) => row.status === "Didn't Show Up").length;
+  return `<section class="meeting-detail">
+    <div class="meeting-detail-header">
+      <div>
+        <h3>${escapeHtml(meeting.title)}</h3>
+        <p>${formatDate(meeting.date)} ${formatTime(meeting.time)}</p>
+      </div>
+      <div class="meeting-detail-stats">
+        <span>${attended} attended</span>
+        <span>${unable} unable</span>
+        <span>${noShow} no-show</span>
+      </div>
+    </div>
+    <div class="meeting-detail-grid">
+      <section>
+        <h4>Attendance</h4>
+        ${attendance.length ? attendance.map(renderMeetingAttendanceItem).join("") : `<p class="muted">No attendance has been recorded for this meeting yet.</p>`}
+      </section>
+      <section>
+        <h4>Notes</h4>
+        ${notes.length ? notes.map(renderMeetingNoteItem).join("") : `<p class="muted">No notes have been saved for this meeting yet.</p>`}
+      </section>
+    </div>
+  </section>`;
+}
+
+function renderMeetingAttendanceItem(row) {
+  const person = findPerson(row.personId);
+  return `<div class="detail-item">
+    <strong>${escapeHtml(person?.name || row.name)}</strong>
+    <span class="badge ${statusClass(row.status)}">${escapeHtml(row.status)}</span>
+    ${row.arrival ? `<small>${formatTime(row.arrival)}</small>` : ""}
+    ${row.notes ? `<p>${escapeHtml(row.notes)}</p>` : ""}
+  </div>`;
+}
+
+function renderMeetingNoteItem(note) {
+  return `<div class="detail-item">
+    <strong>${escapeHtml(note.note)}</strong>
+    ${note.action ? `<p>Action: ${escapeHtml(note.action)}</p>` : ""}
+    ${note.owner ? `<small>Owner: ${escapeHtml(note.owner)}</small>` : ""}
+    ${note.dueDate ? `<small>Due: ${formatDate(note.dueDate)}</small>` : ""}
+  </div>`;
 }
 
 function deleteButton(collection, id) {
