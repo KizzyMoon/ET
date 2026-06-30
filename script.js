@@ -442,7 +442,13 @@ function renderMeetingCard(meeting) {
 }
 
 function renderMeetingDetail(meeting) {
-  const attendance = state.attendance.filter((row) => row.meetingId === meeting.id);
+  const attendance = state.attendance
+    .filter((row) => row.meetingId === meeting.id)
+    .sort((a, b) => {
+      const aName = findPerson(a.personId)?.name || a.name;
+      const bName = findPerson(b.personId)?.name || b.name;
+      return aName.localeCompare(bName);
+    });
   const notes = state.notes.filter((note) => note.meetingId === meeting.id);
   const attended = attendance.filter((row) => row.status === "In Attendance").length;
   const unable = attendance.filter((row) => row.status === "Unable to Make It").length;
@@ -460,9 +466,13 @@ function renderMeetingDetail(meeting) {
       </div>
     </div>
     <div class="meeting-detail-grid">
-      <section>
+      <section class="meeting-attendance-section">
         <h4>Attendance</h4>
-        ${attendance.length ? attendance.map(renderMeetingAttendanceItem).join("") : `<p class="muted">No attendance has been recorded for this meeting yet.</p>`}
+        ${
+          attendance.length
+            ? `<div class="meeting-attendance-list">${attendance.map(renderMeetingAttendanceItem).join("")}</div>`
+            : `<p class="muted">No attendance has been recorded for this meeting yet.</p>`
+        }
       </section>
       <section>
         <h4>Notes</h4>
@@ -474,7 +484,7 @@ function renderMeetingDetail(meeting) {
 
 function renderMeetingAttendanceItem(row) {
   const person = findPerson(row.personId);
-  return `<div class="detail-item">
+  return `<div class="meeting-attendance-item">
     <strong>${escapeHtml(person?.name || row.name)}</strong>
     <span class="badge ${statusClass(row.status)}">${escapeHtml(row.status)}</span>
     ${row.arrival ? `<small>${formatTime(row.arrival)}</small>` : ""}
