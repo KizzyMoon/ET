@@ -626,10 +626,14 @@ function renderAttendanceMeetingDetail(meeting) {
         <span>${noShow} no-show</span>
       </div>
     </div>
-    <div class="meeting-detail-grid">
-      <section>
+    <div class="meeting-detail-grid attendance-detail-grid">
+      <section class="attendance-people-section">
         <h4>People</h4>
-        ${attendance.length ? attendance.map(renderAttendanceDetailPerson).join("") : `<p class="muted">No attendance has been recorded for this meeting yet.</p>`}
+        ${
+          attendance.length
+            ? `<div class="attendance-detail-list">${attendance.map(renderAttendanceDetailPerson).join("")}</div>`
+            : `<p class="muted">No attendance has been recorded for this meeting yet.</p>`
+        }
       </section>
       <section>
         <h4>Meeting Notes</h4>
@@ -641,14 +645,14 @@ function renderAttendanceMeetingDetail(meeting) {
 
 function renderAttendanceDetailPerson(row) {
   const person = findPerson(row.personId);
-  return `<div class="detail-item attendance-detail-person">
-    <div class="attendance-detail-person-header">
+  return `<div class="attendance-detail-person">
+    <div class="attendance-detail-main">
       <strong>${escapeHtml(person?.name || row.name)}</strong>
-      <span class="badge ${statusClass(row.status)}">${escapeHtml(row.status)}</span>
+      ${row.arrival ? `<small>${formatTime(row.arrival)}</small>` : ""}
     </div>
-    ${row.arrival ? `<small>Arrival: ${formatTime(row.arrival)}</small>` : ""}
-    ${row.notes ? `<p>${escapeHtml(row.notes)}</p>` : ""}
+    <span class="badge ${statusClass(row.status)}">${escapeHtml(row.status)}</span>
     ${deleteButton("attendance", row.id)}
+    ${row.notes ? `<p>${escapeHtml(row.notes)}</p>` : ""}
   </div>`;
 }
 

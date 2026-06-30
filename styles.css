@@ -447,23 +447,68 @@ th {
   font-size: 0.78rem;
 }
 
+.attendance-detail-grid {
+  grid-template-columns: 1fr;
+}
+
+.attendance-detail-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
 .attendance-detail-person {
-  position: relative;
-  padding-right: 48px;
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) max-content 32px;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #171620;
+  padding: 8px;
+  min-width: 0;
+}
+
+.attendance-detail-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.attendance-detail-main strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.92rem;
+  line-height: 1.15;
+}
+
+.attendance-detail-main small {
+  font-size: 0.76rem;
+}
+
+.attendance-detail-person .badge {
+  justify-self: end;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.72rem;
 }
 
 .attendance-detail-person .delete-row {
-  position: absolute;
-  top: 11px;
-  right: 0;
+  position: static;
+  width: 30px;
+  height: 30px;
 }
 
-.attendance-detail-person-header {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  justify-content: space-between;
+.attendance-detail-person p {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
 }
 
 .meeting-browser {
